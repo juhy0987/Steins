@@ -36,11 +36,26 @@ make run
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/healthz` | liveness 체크 |
+| GET | `/docs` | **Swagger UI** API 문서 (브라우저) |
+| GET | `/api/v1/openapi.yaml` | OpenAPI 3.0 스펙 원본 |
 | GET | `/api/v1/manga` | 만화 목록 |
 | GET | `/api/v1/manga/{slug}` | 만화 상세 |
 | GET | `/api/v1/manga/{slug}/chapters` | 챕터 목록 |
 | GET | `/api/v1/chapters/{id}/pages` | **체크섬 포함** 페이지 매니페스트 |
 | GET | `/api/v1/chapters/{id}/pages/{index}/image` | 이미지 바이트 (`Digest` 헤더 포함) |
+
+### API 문서 (Swagger UI)
+
+서버 기동 후 브라우저에서 `/docs` 로 접속하면 모든 엔드포인트를 탐색·시도해볼 수 있습니다.
+
+```bash
+# 서버 실행 후
+open http://localhost:18080/docs            # macOS
+xdg-open http://localhost:18080/docs        # Linux
+```
+
+- Swagger UI 자체 에셋은 swagger-ui-dist CDN 에서 로드합니다 (개발 도구이므로 외부 CDN 의존 허용).
+- OpenAPI 명세는 `internal/api/openapi.yaml` 에 정의되어 있고, 빌드 시 바이너리에 임베드되어 `/api/v1/openapi.yaml` 로 서빙됩니다.
 
 ## 무결성 검증 흐름
 
