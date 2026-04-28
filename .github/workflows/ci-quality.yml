@@ -1,0 +1,121 @@
+name: CI - Quality
+
+# 코드 빌드/테스트/정적 분석 워크플로
+# Convention 검증(커밋·PR 타이틀 형식)은 ci-convention.yml 에 분리되어 있습니다.
+# job `name:` 값은 GitHub Required Status Check 컨텍스트로 사용되므로 변경 금지
+# (docs/ci/status-checks.md 단일 소스 참조).
+
+on:
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            {
+              echo "## ❌ Format Check 실패"
+              echo "다음 파일이 gofmt 포맷을 따르지 않습니다:"
+              echo ""
+              echo '```'
+              echo "$unformatted"
+              echo '```'
+              echo ""
+              echo "\`gofmt -w .\` 를 실행하여 수정하세요."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "## ✅ Format Check 통과" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build
+        run: |
+          go build ./... 2>&1 | tee build.log
+          echo "## ✅ Build 성공" >> "$GITHUB_STEP_SUMMARY"
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run tests
+        run: go test -race -coverprofile=coverage.out -coverpkg=./internal/...,./pkg/... -count=1 ./...
+
+      # ── 1. 가시성: 커버리지 결과를 PR Summary에 직접 표시 ────────
+      - name: Coverage summary
+        if: ${{ !cancelled() }}
+        run: |
+          if [ ! -f coverage.out ]; then
+            echo "## ⚠️ 커버리지 파일 없음 (테스트 실패)" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          total=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          threshold=40
+
+          {
+            echo "## 📊 테스트 커버리지: ${total}%"
+            echo ""
+            echo "| 항목 | 값 |"
+            echo "|------|-----|"
+            echo "| 전체 커버리지 | **${total}%** |"
+            echo "| 임계값 | ${threshold}% |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # ── 3. CI 강제: 임계값 미달 시 에러 ───────────────────────
+          if [ "$(echo "$total < $threshold" | bc -l)" -eq 1 ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "❌ 커버리지 ${total}%가 임계값 ${threshold}% 미만입니다." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.8
