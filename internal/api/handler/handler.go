@@ -17,6 +17,7 @@ import (
 	"steins/internal/chapter"
 	"steins/internal/manga"
 	"steins/pkg/httpx"
+	"steins/pkg/logger"
 )
 
 // Handlers bundles the API handler dependencies.
@@ -140,20 +141,36 @@ func (h *Handlers) ServePageImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
+	// 서빙 시점의 실제 파일 크기를 사용 — Store 스캔 시점의 src.ByteSize는
+	// 파일이 교체된 경우 실제 바이트 수와 어긋날 수 있음.
+	fi, err := f.Stat()
+	if err != nil {
+		httpx.WriteError(w, apperr.NewStorageError(apperr.CodeStorageRead, "stat page file", err))
+		return
+	}
+
 	w.Header().Set("Content-Type", src.MimeType)
-	w.Header().Set("Content-Length", strconv.FormatInt(src.ByteSize, 10))
+	w.Header().Set("Content-Length", strconv.FormatInt(fi.Size(), 10))
 	// Format: `sha-256=<base64>` per RFC 9530. Our checksum is "sha-256:<base64>",
 	// so split on the colon for the header form.
 	if parts := strings.SplitN(string(checksum), ":", 2); len(parts) == 2 {
 		w.Header().Set("Digest", fmt.Sprintf("%s=%s", parts[0], parts[1]))
 		w.Header().Set("ETag", `"`+parts[1]+`"`)
 	}
-	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	// 동일 URL에서 이미지가 교체될 수 있으므로 immutable 장기 캐시는 사용하지 않음.
+	// ETag 기반 재검증을 강제해 manifest checksum과의 장기 불일치를 방지.
+	w.Header().Set("Cache-Control", "public, no-cache, must-revalidate")
 
 	w.WriteHeader(http.StatusOK)
 	if _, err := io.Copy(w, f); err != nil {
-		// Headers are already flushed; we can only log via the calling
-		// middleware. Return without writing further.
+		// 헤더가 이미 flush 되어 클라이언트에 에러를 전달할 수 없으므로,
+		// 서버 측 진단을 위해 request-scoped logger로 기록만 남긴다.
+		logger.FromContext(r.Context()).
+			WithError(err).
+			Error().
+			Str("chapter_id", chapterID).
+			Int("page_index", idx).
+			Msg("failed to stream page image")
 		return
 	}
 }

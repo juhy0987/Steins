@@ -13,6 +13,8 @@ import (
 	chi "github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 
+	"steins/internal/apperr"
+	"steins/pkg/httpx"
 	"steins/pkg/logger"
 )
 
@@ -86,7 +88,8 @@ func Recover(log *logger.Logger) func(http.Handler) http.Handler {
 					log.Error().
 						Str("stack", string(debug.Stack())).
 						Msg("panic recovered")
-					http.Error(w, `{"error":{"code":"INTERNAL_ERROR","message":"unexpected error"}}`, http.StatusInternalServerError)
+					// Content-Type을 application/json 으로 명시해 핸들러의 에러 포맷과 통일.
+					httpx.WriteError(w, apperr.NewInternalError("unexpected error", nil))
 				}
 			}()
 			next.ServeHTTP(w, r)

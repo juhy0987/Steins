@@ -230,8 +230,13 @@ func (s *Store) loadChapter(
 	sort.Slice(rawPages, func(i, j int) bool { return rawPages[i].index < rawPages[j].index })
 
 	cf := chapterFile{}
-	if raw, err := os.ReadFile(filepath.Join(dir, "chapter.json")); err == nil {
-		_ = json.Unmarshal(raw, &cf)
+	chapterFilePath := filepath.Join(dir, "chapter.json")
+	if raw, err := os.ReadFile(chapterFilePath); err == nil {
+		if err := json.Unmarshal(raw, &cf); err != nil {
+			return nil, nil, fmt.Errorf("unmarshal %s: %w", chapterFilePath, err)
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, nil, fmt.Errorf("read %s: %w", chapterFilePath, err)
 	}
 
 	chID := m.Slug + "__" + number
@@ -343,8 +348,10 @@ func (s *Store) FindPageSource(
 }
 
 func parsePageFile(name string) (int, string, bool) {
-	ext := strings.ToLower(filepath.Ext(name))
-	mime := mimeFromExt(ext)
+	// 원본 파일명에서 확장자를 분리한 뒤 mime lookup만 소문자 정규화.
+	// 그래야 `001.PNG` 처럼 대문자 확장자도 정상적으로 매칭된다.
+	ext := filepath.Ext(name)
+	mime := mimeFromExt(strings.ToLower(ext))
 	if mime == "" {
 		return 0, "", false
 	}
