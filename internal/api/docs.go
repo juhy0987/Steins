@@ -43,14 +43,16 @@ const docsHTML = `<!DOCTYPE html>
 // serveOpenAPISpec returns the embedded OpenAPI 3.0 specification.
 func serveOpenAPISpec(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/yaml; charset=utf-8")
-	// 스펙은 자주 바뀌지 않으므로 짧은 양수 max-age 로 클라이언트 캐싱을 허용한다.
-	w.Header().Set("Cache-Control", "public, max-age=300")
+	// 스펙은 바이너리에 임베드되어 메모리에서 서빙되므로 캐시 없이도 비용이 거의 없다.
+	// 개발 중 spec 변경 후 서버 재기동 시 브라우저가 stale 캐시를 보지 않도록 no-cache.
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write(openapiYAML)
 }
 
 // serveSwaggerUI returns the Swagger UI HTML entry page.
 func serveSwaggerUI(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Cache-Control", "public, max-age=300")
+	// HTML 도 임베드된 상수이므로 캐시 비용이 없고, UI 설정 변경 시 즉시 반영되도록 no-cache.
+	w.Header().Set("Cache-Control", "no-cache")
 	_, _ = w.Write([]byte(docsHTML))
 }
