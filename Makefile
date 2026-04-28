@@ -6,7 +6,7 @@ API_BIN   := $(BIN_DIR)/api
 SEED_BIN  := $(BIN_DIR)/seed
 
 DATA_DIR  ?= ./data/manga
-ADDR      ?= :8080
+ADDR      ?= :8081
 
 .PHONY: all build api seed run seed-data test lint vet clean tidy
 
