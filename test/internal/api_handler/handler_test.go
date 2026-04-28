@@ -98,6 +98,40 @@ func TestServePageImage_BadIndex_Returns400(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
+func TestServeOpenAPISpec_ReturnsYAML(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/api/v1/openapi.yaml")
+	require.NoError(t, err)
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	require.NoError(t, err)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, resp.Header.Get("Content-Type"), "application/yaml")
+	// Sanity: a real OpenAPI 3.x doc starts with `openapi: 3.`
+	assert.Contains(t, string(body), "openapi: 3.")
+	assert.Contains(t, string(body), "Steins API")
+}
+
+func TestServeSwaggerUI_ReturnsHTML(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/docs")
+	require.NoError(t, err)
+	body, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	require.NoError(t, err)
+
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Contains(t, resp.Header.Get("Content-Type"), "text/html")
+	assert.Contains(t, string(body), "swagger-ui")
+	// The page must point Swagger UI at our spec endpoint, otherwise it loads nothing.
+	assert.Contains(t, string(body), "/api/v1/openapi.yaml")
+}
+
 // --- helpers ---
 
 type testManifest struct {

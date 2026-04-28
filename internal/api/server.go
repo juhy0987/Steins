@@ -29,7 +29,11 @@ func NewRouter(cfg Config, log *logger.Logger, h *handler.Handlers) http.Handler
 
 	r.Get("/healthz", h.Health)
 
+	// Developer docs — Swagger UI 진입 페이지와 OpenAPI 스펙 원본.
+	r.Get("/docs", serveSwaggerUI)
+
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/openapi.yaml", serveOpenAPISpec)
 		r.Get("/manga", h.ListManga)
 		r.Get("/manga/{slug}", h.GetManga)
 		r.Get("/manga/{slug}/chapters", h.ListChapters)
