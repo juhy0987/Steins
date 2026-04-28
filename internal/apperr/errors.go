@@ -30,16 +30,16 @@ const (
 
 // Error codes for v0. Domain-specific codes use UPPER_SNAKE names.
 const (
-	CodeValMissing       = "VAL_001"
-	CodeValBadFormat     = "VAL_002"
-	CodeValBadJSON       = "VAL_005"
-	CodeMangaNotFound    = "MANGA_NOT_FOUND"
-	CodeChapterNotFound  = "CHAPTER_NOT_FOUND"
-	CodePageNotFound     = "PAGE_NOT_FOUND"
-	CodeImageNotFound    = "IMAGE_NOT_FOUND"
-	CodeStorageRead      = "STORAGE_001"
-	CodeStorageWrite     = "STORAGE_002"
-	CodeInternal         = "INTERNAL_ERROR"
+	CodeValMissing      = "VAL_001"
+	CodeValBadFormat    = "VAL_002"
+	CodeValBadJSON      = "VAL_005"
+	CodeMangaNotFound   = "MANGA_NOT_FOUND"
+	CodeChapterNotFound = "CHAPTER_NOT_FOUND"
+	CodePageNotFound    = "PAGE_NOT_FOUND"
+	CodeImageNotFound   = "IMAGE_NOT_FOUND"
+	CodeStorageRead     = "STORAGE_001"
+	CodeStorageWrite    = "STORAGE_002"
+	CodeInternal        = "INTERNAL_ERROR"
 )
 
 // Error is the structured application error type.

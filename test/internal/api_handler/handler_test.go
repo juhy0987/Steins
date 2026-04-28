@@ -149,11 +149,11 @@ func seedSimpleSeries(t *testing.T, root string) {
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, "chapters", "0001"), 0o755))
 
 	meta := map[string]any{
-		"slug":        "alpha",
-		"title":       "Alpha",
-		"status":      "ongoing",
-		"language":    "ko",
-		"reading_dir": "rtl",
+		"slug":         "alpha",
+		"title":        "Alpha",
+		"status":       "ongoing",
+		"language":     "ko",
+		"reading_dir":  "rtl",
 		"published_at": time.Now().UTC(),
 		"updated_at":   time.Now().UTC(),
 	}

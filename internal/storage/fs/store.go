@@ -41,11 +41,11 @@ type Store struct {
 	root string
 
 	mu       sync.RWMutex
-	manga    map[string]*manga.Manga              // slug -> manga
-	order    []string                             // slug list, original scan order
-	chapters map[string]*chapter.Chapter          // chapter ID -> chapter
-	bySlug   map[string][]*chapter.Chapter        // manga slug -> chapters
-	pages    map[string][]*chapter.PageSource     // chapter ID -> ordered page sources
+	manga    map[string]*manga.Manga          // slug -> manga
+	order    []string                         // slug list, original scan order
+	chapters map[string]*chapter.Chapter      // chapter ID -> chapter
+	bySlug   map[string][]*chapter.Chapter    // manga slug -> chapters
+	pages    map[string][]*chapter.PageSource // chapter ID -> ordered page sources
 	pageByID map[string]map[int]*chapter.PageSource
 }
 
